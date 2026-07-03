@@ -1,28 +1,85 @@
- 项目：hermes-weekly-digest
-     一句话： 自动扫描你运行的一或多个 Hermes Agent 的每周工作数据，生成一份经典报纸风格的 PDF 周报。
-     
-     解决什么问题：
-     你同时跑多个
-     Agent（比如分析师、工程师、助手），每周想知道各自做了什么、学了什么、有没有出问题。手动拼接太麻烦，这个项目自
-     动帮你收集、总结、排版、推送。
+# Hermes Weekly Digest 📊
 
-     核心流程：
-     SQLite 读会话 → Python 收集 JSON → LLM 写叙事 → md-to-pdf 排版 → QQ 推送
-     1. 数据收集 — weekly-digest.py 直读 state.db（SQLite），收集每个 Agent
-     的会话记录、新增技能、新增记忆，输出结构化 JSON
-     2. 叙事总结 — 把 JSON 喂给 LLM，写自然语言周报
-     3. PDF 排版 — md-to-pdf.py 转经典报纸风格 PDF（亚麻纸底色、棕褐色系、报头、紧凑表格交替色、自动版本号）
-     4. 定时推送 — 配合 Hermes cron 每 4 小时检测周一，自动送达
+> v1.0.0 — 跨 Hermes Agent 周报自动生成系统
 
-     技术特点：
-     - 两步走架构：收集阶段零 token 消耗，LLM 阶段每周只触发一次
-     - SQLite 直读比 API 快 10 倍，获取会话原文
-     - 周一守护逻辑：非周一静默退出，不产生垃圾输出
-     - PDF 亚麻纸纹理只生成一次并缓存 PNG，后续秒级完成
-     - 自动版本递增，同名文件 _v1 → _v2 → _v3 不覆盖
-     - 仅依赖 PyYAML、fpdf2、Pillow，轻量无负担
+**扫描所有 Hermes Agent 的会话历史、技能、记忆 → LLM 写叙事总结 → 亚麻纸 PDF + QQ 推送**
 
-     适用场景：
-     - 同时运行多个 Agent 的个人/小团队
-     - 需要定期回顾 Agent 成长轨迹
-     - 想自动化周报，减少重复劳动
+> 你同时运行多个 Hermes Agent（比如三个不同人格：分析师、工程师、助手），每周想知道它们各自做了什么、学了什么、有没有出问题？这个项目就是干这个的。
+
+---
+
+## 效果预览
+
+<!-- 以下为实际 PDF 输出效果，由 md-to-pdf.py 生成 -->
+![Weekly Digest Report](docs/assets/report-preview.png)
+
+**核心特性：**
+- 📕 **PDF 报告** — 经典报纸风格（亚麻纸纹理底色、报头、日期自动加粗、紧凑表格交替色）
+- 💬 **QQ/微信推送** — 每周一自动送达
+- ⚡ **零开销缓存** — 纹理 PNG 只生成一次，后续 PDF 秒级完成
+
+---
+
+## 快速开始
+
+```bash
+# 1. 克隆
+git clone https://github.com/你的用户名/hermes-weekly-digest.git
+cd hermes-weekly-digest
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 配置
+cp config.example.yaml config.yaml
+# 编辑 config.yaml，设置你的 profiles_dir 和 profile_info
+
+# 4. 手动测试
+python scripts/weekly-digest.py --force
+
+# 5. 配合 LLM 生成叙事报告（见 workflow.md）
+
+# 6. 设 cron 定时执行（见 docs/workflow.md）
+```
+
+---
+
+## 核心文件
+
+| 文件 | 用途 |
+|------|------|
+| `scripts/weekly-digest.py` | 数据收集引擎 — 直读 Hermes state.db，收集会话/技能/记忆 |
+| `scripts/md-to-pdf.py` | PDF 生成器 — Markdown → 经典报纸风格 PDF（亚麻纸纹理） |
+| `config.example.yaml` | 配置模板 |
+| `docs/setup.md` | 完整安装配置指南 |
+| `docs/workflow.md` | LLM 驱动周报流程 + cron 调度 |
+| `docs/architecture.md` | 系统架构说明 |
+
+---
+
+## 原理
+
+```
+┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
+│ Hermes       │    │ weekly-digest.py │    │ LLM Agent    │
+│ state.db     │───→│ (每4h, no_agent) │───→│ (读取 JSON,  │
+│ (3 profiles) │    │ 输出 JSON 路径   │    │  写叙事报告)  │
+└──────────────┘    └──────────────────┘    └──────┬───────┘
+                                                   │
+                                          ┌────────▼────────┐
+                                          │ md-to-pdf.py    │
+                                          │ Markdown → PDF  │
+                                          └─────────────────┘
+```
+
+---
+
+## 与其他工具的关系
+
+本项目是 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 的**配套工具**，不是替代品。它利用 Hermes 的 `state.db`（SQLite 数据库）读取会话记录，配合 Hermes 自身的 cron 调度系统定时执行。
+
+---
+
+## 许可证
+
+MIT
