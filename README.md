@@ -10,8 +10,8 @@
 
 ## 效果预览
 
-<!-- 以下为实际 PDF 输出效果，由 md-to-pdf.py 生成 -->
-![Weekly Digest Report](docs/assets/report-preview.png)
+<!-- 实际周报输出示例（由系统生成） -->
+![Weekly Digest Report](docs/assets/weekly-report-screenshot.png)
 
 **核心特性：**
 - 📕 **PDF 报告** — 经典报纸风格（亚麻纸纹理底色、报头、日期自动加粗、紧凑表格交替色）
